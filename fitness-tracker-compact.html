@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Fitness Tracker</title>
+  <style>
+    *{box-sizing:border-box}
+    :root{--n:#0b1b33;--n2:#13294b;--l:#b6f03c;--ld:#7fb800;--m:#51607a;--ln:#dde3ec}
+    body{margin:0;font:1rem/1.5 "Trebuchet MS","Segoe UI",sans-serif;color:var(--n);background:#f2f5f9;overflow-x:hidden}
+    h1,h2,h3{font-family:Georgia,serif;margin:0 0 .5rem;line-height:1.2}
+    a{color:inherit}:focus-visible{outline:3px solid var(--ld);outline-offset:2px}
+    .sk{position:absolute;left:-99px}.sk:focus{left:1rem;top:1rem;z-index:99;background:var(--l);padding:.5rem}
+    #t{position:absolute;opacity:0}
+    aside{position:fixed;inset:0 auto 0 0;width:min(16rem,85vw);background:var(--n);color:#fff;padding:1.5rem 1rem;z-index:30;
+      transform:translateX(-100%);transition:transform .25s;display:flex;flex-direction:column;gap:.25rem;overflow-y:auto}
+    #t:checked~aside{transform:none}
+    .x{display:none}#t:checked~.x{display:block;position:fixed;inset:0;background:rgba(11,27,51,.5);z-index:20}
+    aside b{font:700 1.3rem Georgia,serif;margin-bottom:1rem}
+    aside a{display:flex;align-items:center;gap:.7rem;min-height:2.75rem;padding:0 .9rem;border-radius:8px;color:#c9d4e6;text-decoration:none}
+    aside a:hover{background:var(--n2);color:#fff}
+    body:has(#dashboard:target) aside a[href="#dashboard"],
+    body:has(#activity:target) aside a[href="#activity"],
+    body:has(#nutrition:target) aside a[href="#nutrition"],
+    body:has(#sleep:target) aside a[href="#sleep"],
+    body:has(#progress:target) aside a[href="#progress"],
+    body:has(#goals:target) aside a[href="#goals"],
+    body:has(#settings:target) aside a[href="#settings"],
+    body:has(#workouts:target,#workouts :target) aside a[href="#workouts"] {background:var(--l);color:var(--n);font-weight:700}
+    .me{margin-top:auto;padding-top:1rem;border-top:1px solid var(--n2);display:flex;gap:.7rem;align-items:center}
+    .av{width:2.5rem;height:2.5rem;border-radius:50%;background:var(--l);color:var(--n);display:inline-grid;place-items:center;font-weight:700}
+    header{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;padding:1rem;background:rgba(242,245,249,.95);border-bottom:1px solid var(--ln)}
+    header div{flex:1 1 10rem}header small{color:var(--m)}header h1{margin:0}
+    .bg{width:2.75rem;height:2.75rem;display:grid;place-items:center;border-radius:8px;background:var(--n);color:#fff;cursor:pointer}
+    header input{flex:1 1 100%;order:5;height:2.75rem;border:1px solid var(--ln);border-radius:99px;padding:0 1rem;font:inherit}
+    main{padding:1rem;max-width:80rem;margin:0 auto;display:grid;gap:1.5rem}
+    .pg{display:none;gap:1.5rem;scroll-margin-top:5rem}
+    .pg:target,.pg:has(:target),main:not(:has(.pg:target,.pg :target)) #index{display:grid}
+    .note{background:#fff8e1;border:1px solid #f1d98a;border-radius:8px;padding:.6rem 1rem;font-size:.9rem}
+    .g{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))}
+    .c{background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 8px 24px -12px rgba(11,27,51,.25);min-width:0}
+    .dk{background:var(--n);color:#fff}
+    .c small,.ch+small{color:var(--m)}.dk small{color:#aebbd2}
+    .v{font:700 2rem/1.1 Georgia,serif;margin:.3rem 0}.v small{font:400 1rem "Trebuchet MS",sans-serif}
+    progress{display:block;width:100%;height:.7rem;margin:.6rem 0 .3rem;appearance:none;border:0;border-radius:99px;background:#e4e9f1;overflow:hidden}
+    progress::-webkit-progress-bar{background:#e4e9f1}progress::-webkit-progress-value{background:var(--ld)}progress::-moz-progress-bar{background:var(--ld)}
+    .dk progress::-webkit-progress-value{background:var(--l)}
+    .chip{display:inline-block;padding:.15rem .7rem;border-radius:99px;background:#e8f7c0;color:#2f4a00;font-size:.85rem;font-weight:700}
+    .ch{list-style:none;margin:0;padding:1rem 0 0;display:grid;grid-template-columns:repeat(7,1fr);gap:.4rem;height:14rem}
+    .ch li{height:100%;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;font-size:.75rem;font-weight:700}
+    .ch li::before{content:"";width:min(70%,2.5rem);height:var(--h);background:var(--n);border-radius:6px 6px 0 0}
+    .ch li.hit::before{background:var(--ld)}
+    .ch li::after{content:attr(data-d);color:var(--m);font-weight:400;margin-top:.3rem}
+    .ls{list-style:none;margin:0;padding:0}
+    .ls li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:.4rem 1rem;padding:.7rem 0;border-bottom:1px solid var(--ln)}
+    .hero{background:var(--n);color:#fff;border-radius:16px;padding:clamp(1.5rem,6vw,4rem)}.hero h1{font-size:clamp(2rem,7vw,3.4rem)}
+    .btn{display:inline-flex;align-items:center;min-height:2.75rem;padding:0 1.5rem;border-radius:99px;background:var(--n);color:#fff;text-decoration:none;font-weight:700}
+    .btn:hover,.hero .btn{background:var(--l);color:var(--n)}
+    .off{opacity:.25}
+    details{background:#fff;border-radius:8px;padding:.4rem 1rem}summary{min-height:2.75rem;line-height:2.75rem;cursor:pointer;font-weight:700}
+    form{display:grid;gap:1rem;max-width:30rem}label{font-weight:700}
+    form input,select{width:100%;min-height:2.75rem;border:1px solid #b8c3d6;border-radius:8px;padding:0 .75rem;font:inherit;background:#fff}
+    footer{background:var(--n);color:#c9d4e6;padding:1.5rem 1rem;margin-top:1.5rem;display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem 1rem}
+    footer a{display:inline-block;padding:.6rem 1rem .6rem 0}
+    @media(min-width:900px){body{padding-left:16rem}aside{transform:none}.bg{display:none}header input{flex:1 1 16rem;order:0}main{padding:2rem}.sp{grid-template-columns:2fr 1fr}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+<a class="sk" href="#main">Skip to content</a>
+<input type="checkbox" id="t" aria-label="Open navigation menu">
+<aside>
+  <b>Fitness Tracker</b>
+  <a href="#dashboard">&#128202; Dashboard</a>
+  <a href="#activity">&#127939; My Activity</a>
+  <a href="#workouts">&#127947; Workout Plans</a>
+  <a href="#nutrition">&#129367; Nutrition</a>
+  <a href="#sleep">&#128564; Sleep Tracker</a>
+  <a href="#progress">&#128200; Progress Reports</a>
+  <a href="#goals">&#127919; Goals</a>
+  <a href="#settings">&#9881; Settings</a>
+  <div class="me"><span class="av">DV</span><span>Darshan Vaniya<br><small>Sample profile</small></span></div>
+</aside>
+<label class="x" for="t" aria-label="Close menu"></label>
+<header>
+  <label class="bg" for="t" aria-label="Toggle navigation menu">&#9776;</label>
+  <div><small>Good Morning, Darshan!</small><h1>Fitness Tracker</h1></div>
+  <input type="search" placeholder="Search (visual only)" aria-label="Search (visual only)">
+  <span role="img" aria-label="Notifications (visual only)">&#128276;</span> <span class="av">DV</span>
+</header>
+<main id="main">
+<p class="note"><strong>Static prototype.</strong> All numbers are sample data. Nothing here is saved, tracked or updated.</p>
+<section class="pg" id="index">
+<div class="hero"><h1>Your day, laid out in numbers.</h1>
+<p>A static preview of a fitness dashboard, built with HTML and CSS only.</p><a class="btn" href="#dashboard">Open dashboard</a></div>
+<details><summary>What works and what does not?</summary>
+<p><strong>Works:</strong> links, hover and focus styles, the mobile menu, expandable sections, form fields.</p>
+<p><strong>Static only:</strong> every metric, chart and progress bar. Nothing is saved.</p></details>
+</section>
+<section class="pg" id="dashboard">
+<h2>Dashboard</h2>
+<div class="g">
+<div class="c"><h3>Steps Taken</h3><p class="v">7,842 <small>/ 10,000</small></p><progress value="78" max="100">78%</progress><small>78% &middot; daily target</small></div>
+<div class="c"><h3>Calories Burned</h3><p class="v">420 <small>kcal</small></p><progress value="70" max="100">70%</progress><small>70% &middot; target 600 kcal</small></div>
+<div class="c"><h3>Active Minutes</h3><p class="v">48 <small>min</small></p><progress value="80" max="100">80%</progress><small>80% &middot; target 60 min</small></div>
+<div class="c"><h3>Water Intake</h3><p class="v">1.8 <small>/ 2.5 L</small></p><progress value="72" max="100">72%</progress><small>72% &middot; daily target</small></div>
+</div>
+<div class="c"><h3>Weekly activity (steps)</h3>
+<ul class="ch" aria-label="Weekly bar chart, sample data">
+  <li style="--h:41%" data-d="Mon">6,200</li>
+  <li style="--h:56%" data-d="Tue">8,400</li>
+  <li style="--h:47%" data-d="Wed">7,100</li>
+  <li style="--h:65%" data-d="Thu">9,800</li>
+  <li style="--h:69%" data-d="Fri" class="hit">10,400</li>
+  <li style="--h:80%" data-d="Sat" class="hit">12,100</li>
+  <li style="--h:52%" data-d="Sun">7,842</li>
+</ul>
+<small>Dark bars: below goal. Green bars: goal reached. Sample data.</small>
+</div>
+</section>
+<section class="pg" id="activity">
+<h2>My Activity</h2>
+<div class="g">
+<div class="c"><h3>Daily Steps</h3><p class="v">7,842 <small>steps</small></p><progress value="78" max="100">78%</progress><small>78% &middot; goal 10,000</small></div>
+<div class="c"><h3>Walking Distance</h3><p class="v">5.9 <small>km</small></p><progress value="74" max="100">74%</progress><small>74% &middot; goal 8 km</small></div>
+<div class="c"><h3>Calories Burned</h3><p class="v">420 <small>kcal</small></p><progress value="70" max="100">70%</progress><small>70% &middot; goal 600</small></div>
+<div class="c"><h3>Active Time</h3><p class="v">48 <small>min</small></p><progress value="80" max="100">80%</progress><small>80% &middot; goal 60</small></div>
+</div>
+<div class="c"><h3>Recent activities</h3><ul class="ls">
+  <li><span><strong>Morning Run</strong> <small>Today</small></span><span>32 min &middot; 310 kcal</span><span class="chip">Cardio</span></li>
+  <li><span><strong>Strength Circuit</strong> <small>Yesterday</small></span><span>45 min &middot; 280 kcal</span><span class="chip">Strength</span></li>
+  <li><span><strong>Evening Yoga</strong> <small>Wednesday</small></span><span>30 min &middot; 110 kcal</span><span class="chip">Flexibility</span></li>
+  <li><span><strong>Cycling</strong> <small>Tuesday</small></span><span>50 min &middot; 390 kcal</span><span class="chip">Cardio</span></li>
+  <li><span><strong>Brisk Walk</strong> <small>Monday</small></span><span>40 min &middot; 160 kcal</span><span class="chip">Walking</span></li>
+</ul></div>
+</section>
+<section class="pg" id="workouts">
+<h2>Workout Plans</h2>
+<p>Informational plans only. Nothing can be started or tracked here.</p>
+<div class="g">
+<div class="c"><span class="chip">Strength</span><h3>Full Body Workout</h3><p>45 min &middot; Intermediate</p><p>Squats, presses and rows in one balanced session.</p><a class="btn" href="#w-info">View plan details</a></div>
+<div class="c"><span class="chip">Cardio</span><h3>Cardio Training</h3><p>30 min &middot; Beginner</p><p>Steady intervals to build stamina and heart health.</p><a class="btn" href="#w-info">View plan details</a></div>
+<div class="c"><span class="chip">Strength</span><h3>Strength Training</h3><p>50 min &middot; Advanced</p><p>Heavy compound lifts with structured rest.</p><a class="btn" href="#w-info">View plan details</a></div>
+<div class="c"><span class="chip">Flexibility</span><h3>Yoga and Stretching</h3><p>25 min &middot; Beginner</p><p>Slow flows to improve mobility and recovery.</p><a class="btn" href="#w-info">View plan details</a></div>
+</div>
+<details id="w-info"><summary>About these plans</summary><p>Plan details are not included in this prototype.</p></details>
+</section>
+<section class="pg" id="nutrition">
+<h2>Nutrition</h2>
+<div class="g">
+<div class="c"><h3>Calories consumed</h3><p class="v">1,420 <small>/ 2,000 kcal</small></p><progress value="71" max="100">71%</progress><small>71% &middot; of goal</small></div>
+<div class="c"><h3>Protein</h3><p class="v">78 <small>/ 120 g</small></p><progress value="65" max="100">65%</progress><small>65% &middot; of goal</small></div>
+<div class="c"><h3>Carbohydrates</h3><p class="v">160 <small>/ 250 g</small></p><progress value="64" max="100">64%</progress><small>64% &middot; of goal</small></div>
+<div class="c"><h3>Fat</h3><p class="v">42 <small>/ 65 g</small></p><progress value="65" max="100">65%</progress><small>65% &middot; of goal</small></div>
+</div>
+<div class="g">
+<div class="c"><h3>Breakfast</h3><p>Oats, banana and almonds</p><small>380 kcal</small></div>
+<div class="c"><h3>Lunch</h3><p>Grilled chicken bowl with rice</p><small>520 kcal</small></div>
+<div class="c"><h3>Dinner</h3><p>Lentil curry with roti</p><small>430 kcal</small></div>
+<div class="c"><h3>Snacks</h3><p>Greek yogurt and an apple</p><small>90 kcal</small></div>
+</div>
+<div class="c"><h3>Water intake</h3><p class="v">1.8 <small>/ 2.5 L</small></p><progress value="72" max="100">72%</progress>
+<p aria-label="7 of 10 glasses filled">&#129371;&#129371;&#129371;&#129371;&#129371;&#129371;&#129371;<span class="off">&#129371;&#129371;&#129371;</span></p><small>Suggested daily target: 2.5 L. Sample data.</small></div>
+</section>
+<section class="pg" id="sleep">
+<h2>Sleep Tracker</h2>
+<div class="g">
+<div class="c dk"><h3>Last night</h3><p class="v">7 h 12 m <small></small></p><progress value="90" max="100">90%</progress><small>90% &middot; goal 8 h</small></div>
+<div class="c"><h3>Sleep quality</h3><p class="v">Good <small>82 / 100</small></p><progress value="82" max="100">82%</progress><small>82% &middot; sample score</small></div>
+</div>
+<div class="c"><h3>Weekly sleep overview (minutes)</h3>
+<ul class="ch" aria-label="Weekly bar chart, sample data">
+  <li style="--h:66%" data-d="Mon">410</li>
+  <li style="--h:61%" data-d="Tue">380</li>
+  <li style="--h:72%" data-d="Wed">450</li>
+  <li style="--h:63%" data-d="Thu">395</li>
+  <li style="--h:69%" data-d="Fri">430</li>
+  <li style="--h:80%" data-d="Sat" class="hit">500</li>
+  <li style="--h:69%" data-d="Sun">432</li>
+</ul>
+<small>Dark bars: below goal. Green bars: goal reached. Sample data.</small>
+</div>
+</section>
+<section class="pg" id="progress">
+<h2>Progress Reports</h2>
+<div class="c"><h3>Weekly calories burned (kcal)</h3>
+<ul class="ch" aria-label="Weekly bar chart, sample data">
+  <li style="--h:35%" data-d="Mon">310</li>
+  <li style="--h:55%" data-d="Tue">480</li>
+  <li style="--h:40%" data-d="Wed">350</li>
+  <li style="--h:59%" data-d="Thu">520</li>
+  <li style="--h:70%" data-d="Fri" class="hit">610</li>
+  <li style="--h:80%" data-d="Sat" class="hit">700</li>
+  <li style="--h:48%" data-d="Sun">420</li>
+</ul>
+<small>Dark bars: below goal. Green bars: goal reached. Sample data.</small>
+</div>
+<div class="g">
+<div class="c"><h3>Workouts this week</h3><p class="v">4 <small>/ 5</small></p><progress value="80" max="100">80%</progress><small>80% &middot; weekly goal</small></div>
+<div class="c"><h3>Avg daily steps</h3><p class="v">8,830 <small></small></p><progress value="88" max="100">88%</progress><small>88% &middot; goal 10,000</small></div>
+<div class="c"><h3>Avg sleep</h3><p class="v">7 h 10 m <small></small></p><progress value="90" max="100">90%</progress><small>90% &middot; goal 8 h</small></div>
+</div>
+</section>
+<section class="pg" id="goals">
+<h2>Goals</h2>
+<div class="g">
+<div class="c"><h3>Daily step goal</h3><p>7,842 of 10,000 steps</p><progress value="78" max="100">78%</progress><small>78% &middot; illustrative</small></div>
+<div class="c"><h3>Weekly workout goal</h3><p>4 of 5 workouts</p><progress value="80" max="100">80%</progress><small>80% &middot; illustrative</small></div>
+<div class="c"><h3>Water intake goal</h3><p>1.8 of 2.5 L</p><progress value="72" max="100">72%</progress><small>72% &middot; illustrative</small></div>
+<div class="c"><h3>Weight management</h3><p>Down 2 of 5 kg (sample)</p><progress value="40" max="100">40%</progress><small>40% &middot; illustrative</small></div>
+</div>
+</section>
+<section class="pg" id="settings">
+<h2>Settings</h2>
+<div class="c"><h3>Profile form (preview)</h3><p class="note">Visual preview only. Nothing is saved.</p>
+<form action="#">
+  <div><label for="nm">Name</label><input id="nm" value="Darshan Vaniya"></div>
+  <div><label for="em">Email</label><input id="em" type="email" placeholder="darshan@example.com"></div>
+  <div><label for="un">Units</label><select id="un"><option>Metric</option><option>Imperial</option></select></div>
+</form></div>
+</section>
+</main>
+<footer><span><strong>Fitness Tracker</strong> &copy; 2026. Static UI prototype.</span>
+  <nav><a href="#">Privacy Policy</a><a href="#">Terms and Conditions</a><a href="#">Contact</a></nav></footer>
+</body>
+</html>
